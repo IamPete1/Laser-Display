@@ -6,18 +6,24 @@ close all
 image = imread('MH_test.jpg');
 
 figure
+subplot(3,2,1)
+hold all
 imshow(image)
+title('Input Image')
 
-% convert to grascale 
+% convert to grayscale 
 I = rgb2gray(image);
 
-figure
+subplot(3,2,2)
+hold all
 imshow(I)
+title('Converted to grayscale')
 
 % do a contor plot of the image
 % use a single level to start with
-figure;
-[C, h] = imcontour(I,1);
+%figure;
+%C = imcontour(I,1);
+C = contourc(double(I),1);
 
 % split out to individual contours
 index = 1;
@@ -53,10 +59,12 @@ for n = 1:numel(contour)
 contour([contour.length] == 0) = [];
 
 % plot individual contors
-figure 
+subplot(3,2,[3,4,5,6])
+title('Scalled and endges found')
 hold all
 xlim([-1,1])
 ylim([-1,1])
+axis equal
 for n = 1:numel(contour)
     plot(contour(n).x,contour(n).y)
 end
@@ -108,16 +116,27 @@ y_data(end+1) = y_data(1);
 
 
 % plot joined up contors
-figure 
+figure
+subplot(4,4,[1,2])
+hold all
+plot(x_data)
+ylabel('X data')
+xlim([1,numel(x_data)])
+
+subplot(4,4,[5,6])
+hold all
+plot(y_data)
+ylabel('Y data')
+xlim([1,numel(x_data)])
+
+subplot(4,4,[3,4,7,8])
+hold all
 plot(x_data,y_data)
 xlim([-1,1])
 ylim([-1,1])
+axis equal
+title('Single line')
 
-figure
-subplot(2,1,1)
-plot(x_data)
-subplot(2,1,2)
-plot(y_data)
 
 plot_time = 1/0.2;
 
@@ -142,19 +161,29 @@ for i = 2:length(x_data)
     low_passed(i,:) = low_passed(i-1,:) + ((sample - low_passed(i-1,:)) * alpha);
 end
 
-figure
-subplot(2,1,1)
+subplot(4,4,[9,10])
+hold all
 plot(low_passed(:,1))
-    
-subplot(2,1,2)
+ylabel({'low passed';'X data'})
+xlim([1,numel(low_passed(:,1))])
+
+subplot(4,4,[13,14])
+hold all
 plot(low_passed(:,2))  
+xlabel('samples')
+ylabel({'low passed';'Y data'})
+xlim([1,numel(low_passed(:,2))])
 
-figure
+subplot(4,4,[11,12,15,16])
+hold all
+title(sprintf('%g Hz low pass filtered',cutoff_freq))
 plot(low_passed(:,1),low_passed(:,2))
-    
-num_repeat = 50;
+xlim([-1,1])
+ylim([-1,1])
+axis equal   
 
-audiowrite('test.wav',repmat(myoutput,num_repeat,1),round(Fs))
+num_repeat = 50;
+audiowrite('test.wav',repmat(low_passed,num_repeat,1),round(Fs))
     
     
     
