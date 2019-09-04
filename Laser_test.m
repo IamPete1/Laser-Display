@@ -3,12 +3,12 @@ clear
 close all
 
 %[input, sample_rate] = audioread('test.mp3');
-[input, sample_rate] = audioread('test_1.wav');
+[input, sample_rate] = audioread('10 Reconstruct.wav');
 
 % only slows donw to min of 1000
 % might need to resample
 slow_down = 1;
-sample_rate = round(sample_rate / 10);
+sample_rate = round(sample_rate / slow_down);
 
 % constrain to hard coded matlab limits
 sample_rate = max(sample_rate,1000);
@@ -16,31 +16,39 @@ sample_rate = min(sample_rate,384000);
 
 player = audioplayer(input,sample_rate);
 
-plot_samples = 1000; % this is the sort of window of the track you see, also the sort of POV time for the laser 
+plot_samples = 10000; % this is the sort of window of the track you see, also the sort of POV time for the laser
 
 sample_time = (1-plot_samples:1:plot_samples) * sample_rate;
 filler_data = zeros(plot_samples*2,2);
 
 % Plot the channels serperatly
-figure 
-subplot(2,1,1)
-hold all
-plot_1 = plot(sample_time,filler_data);
-plot([0,0],[1,-1],'--k')
-scatter_1 = scatter(0,0,'filled','k');
-xlim(sample_time([1,end]))
-ylim([-1,1]) 
-ylabel('CH 1, Left, Y')
-
-subplot(2,1,2)
-hold all
-plot_2 = plot(sample_time,filler_data);
-plot([0,0],[1,-1],'--k')
-scatter_2 = scatter(0,0,'filled','k');
-xlim(sample_time([1,end]))
-ylim([-1,1]) 
-ylabel('CH 2, Right, X')
-xlabel('Time (s), 0 is now') 
+plot_xy = false;
+if plot_xy
+    figure
+    subplot(2,1,1)
+    hold all
+    plot_1 = plot(sample_time,filler_data);
+    plot([0,0],[1,-1],'--k')
+    scatter_1 = scatter(0,0,'filled','k');
+    xlim(sample_time([1,end]))
+    ylim([-1,1])
+    ylabel('CH 2, Right, Y')
+    
+    subplot(2,1,2)
+    hold all
+    plot_2 = plot(sample_time,filler_data);
+    plot([0,0],[1,-1],'--k')
+    scatter_2 = scatter(0,0,'filled','k');
+    xlim(sample_time([1,end]))
+    ylim([-1,1])
+    ylabel('CH 1, Left, X')
+    xlabel('Time (s), 0 is now')
+else
+    plot_1 = [];
+    plot_2 = [];
+    scatter_1 = [];
+    scatter_2 = [];
+end
 
 % pretend to be a laser
 % assume CH1 = left = X and CH2 = right = Y
@@ -56,15 +64,15 @@ laser_plot = surface(zeros(plot_samples,2),zeros(plot_samples,2),zeros(plot_samp
 colormap(map)
 xlim([-1,1]) 
 ylim([-1,1]) 
-xlabel('CH 1, Left, X')
-ylabel('CH 2, Right, Y')
+xlabel('CH 2, Right, X')
+ylabel('CH 1, Left, Y')
 
 start_time = rem(now,1);
-player.TimerFcn = {@update_plots, plot_1, scatter_1, plot_2, scatter_2, input, sample_rate, plot_samples, start_time, laser_plot};
-player.TimerPerio = 0.05; % this is the update rate of the plots in seconds, dont go too low or matlab will shit the bed, 0.05 = 20Hz
+player.TimerFcn = {@update_plots, plot_1, scatter_1, plot_2, scatter_2, input, sample_rate, plot_samples, start_time, laser_plot, plot_xy};
+player.TimerPerio = 0.01; % this is the update rate of the plots in seconds, dont go too low or matlab will shit the bed, 0.05 = 20Hz
 play(player);
 
-function update_plots(player, ~, plot_1, scatter_1, plot_2, scatter_2, input, sample_rate, plot_samples, start_time, laser_plot)
+function update_plots(player, ~, plot_1, scatter_1, plot_2, scatter_2, input, sample_rate, plot_samples, start_time, laser_plot, plot_xy)
 
     timeelapsed = (rem(now,1) - start_time)*24*3600; % time since start in seconds
     
@@ -101,19 +109,21 @@ function update_plots(player, ~, plot_1, scatter_1, plot_2, scatter_2, input, sa
     laser_plot_data(1:size(data,1),:) = data;
     
     col = linspace(1,0,plot_samples)';
-        
+    
     % update the plots
     try
-        set(plot_1,'Ydata',plot_data(:,1)*-1)
-        set(plot_2,'Ydata',plot_data(:,2))
-        set(scatter_1,'Ydata',plot_data(plot_samples,1)*-1)
-        set(scatter_2,'Ydata',plot_data(plot_samples,2))
+        if plot_xy
+            set(plot_1,'Ydata',plot_data(:,2))
+            set(plot_2,'Ydata',plot_data(:,1))
+            set(scatter_1,'Ydata',plot_data(plot_samples,2))
+            set(scatter_2,'Ydata',plot_data(plot_samples,1))
+        end
         
         % this is abit of odd way to do it as it also projects into the
         % future, but unless you care that it lines up with the audo it
         % makes no diffrence
-        set(laser_plot,'Xdata',[laser_plot_data(:,2),laser_plot_data(:,2)])
-        set(laser_plot,'Ydata',[laser_plot_data(:,1)*-1,laser_plot_data(:,1)*-1])
+        set(laser_plot,'Xdata',[laser_plot_data(:,1),laser_plot_data(:,1)])
+        set(laser_plot,'Ydata',[laser_plot_data(:,2),laser_plot_data(:,2)])
         
         set(laser_plot,'CData',[col,col])
 
