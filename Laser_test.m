@@ -2,8 +2,11 @@ clc
 clear 
 close all
 
-%[input, sample_rate] = audioread('test.mp3');
-[input, sample_rate] = audioread('10 Reconstruct.wav');
+[input, sample_rate] = audioread('test_orig.wav');
+%[input, sample_rate] = audioread('test.wav');
+[input, sample_rate] = audioread('test_resampled2.wav');
+
+%[input, sample_rate] = audioread('06 Planets.wav');
 
 % only slows donw to min of 1000
 % might need to resample
